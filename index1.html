@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MR AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ══════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════ */
+:root {
+  --bg:          #f3f6ff;
+  --panel:       rgba(255,255,255,0.92);
+  --glass:       rgba(255,255,255,0.8);
+  --glass-h:     rgba(255,255,255,0.95);
+  --rim:         rgba(95,116,255,0.18);
+  --accent:      #5f74ff;
+  --accent-soft: rgba(95,116,255,0.16);
+  --anatomy:     #f309c0;
+  --anatomy-soft:#ffb89a;
+  --text:        #223155;
+  --muted:       rgba(70,89,129,0.65);
+  --faint:       rgba(70,89,129,0.28);
+  --chat-h:      560px;
+  --chat-w:      420px;
+  --f-disp:      'Outfit', sans-serif;
+  --f-mono:      'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: linear-gradient(180deg, #eef2ff 0%, #f8fbff 100%); color: var(--text); font-family: var(--f-disp); }
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(95,116,255,0.18), transparent 24%),
+              radial-gradient(circle at 80% 15%, rgba(255,186,102,0.14), transparent 22%);
+  pointer-events: none;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 80% 80%, rgba(95,116,255,0.12), transparent 24%);
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════
+   BACKGROUND
+══════════════════════════════════════════ */
+.bg-photo,
+.bg-chroma,
+#particles,
+.bg-grid,
+.bg-vignette,
+.scan {
+  display: none;
+}
+
+
+/* ══════════════════════════════════════════
+   NAVBAR
+══════════════════════════════════════════ */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 80;
+  padding: 18px 34px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(95,116,255,0.16);
+}
+.nav-brand { display: flex; align-items: center; gap: 14px; }
+.brand-mark {
+  width: 44px; height: 44px; border-radius: 16px;
+  background: rgba(95,116,255,0.14);
+  border: 1px solid rgba(95,116,255,0.16);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--accent);
+}
+.brand-copy .n { font-size: 16px; font-weight: 700; color: var(--text); }
+.brand-copy .t { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+.nav-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 28px; align-items: center;
+}
+.nav-item {
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  letter-spacing: 0.4px; cursor: pointer; transition: color 0.2s ease;
+}
+.nav-item:hover, .nav-item.active { color: var(--accent); }
+.nav-item.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 3px; background: var(--accent); border-radius: 999px; }
+
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 18px; border-radius: 999px;
+  border: 1px solid rgba(95,116,255,0.18);
+  background: rgba(95,116,255,0.12);
+  font-size: 12px; font-weight: 600; color: var(--accent);
+}
+.pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px rgba(95,116,255,0.3); animation: pulseDot 1.6s ease-in-out infinite;
+}
+@keyframes pdot {
+  0%,100%{ opacity:.35; transform:scale(.85); }
+  50%{ opacity:1; transform:scale(1.1); box-shadow:0 0 14px var(--lime); }
+}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; flex-direction: column; justify-content: center;
+  padding-left: clamp(40px, 9vw, 140px);
+  pointer-events: none;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--f-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: 2.5px; text-transform: uppercase; color: var(--teal);
+  margin-bottom: 22px;
+  opacity: 0; animation: up 0.8s ease 0.4s forwards;
+}
+.hero-tag::before {
+  content: ''; width: 28px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--teal));
+}
+.hero-h1 {
+  font-size: clamp(44px, 5.5vw, 76px); font-weight: 900;
+  line-height: 1.02; letter-spacing: -2px; margin-bottom: 20px;
+  opacity: 0; animation: up 0.8s ease 0.6s forwards;
+}
+.hero-h1 em {
+  font-style: normal;
+  background: linear-gradient(110deg, var(--anatomy) 0%, var(--anatomy-soft) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero-desc {
+  max-width: 400px; font-size: 15px; font-weight: 300;
+  line-height: 1.8; color: var(--muted); margin-bottom: 40px;
+  opacity: 0; animation: up 0.8s ease 0.8s forwards;
+}
+.hero-kpis {
+  display: flex; gap: 32px; align-items: center;
+  opacity: 0; animation: up 0.8s ease 1s forwards;
+}
+.kpi { display: flex; flex-direction: column; gap: 3px; }
+.kpi-v {
+  font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--text), rgba(200,220,255,0.7));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.kpi-l { font-size: 10px; color: var(--faint); letter-spacing: 0.8px; text-transform: uppercase; font-family: var(--f-mono); }
+.kpi-sep { width: 1px; height: 34px; background: linear-gradient(to bottom, transparent, var(--rim), transparent); }
+@keyframes up {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ══════════════════════════════════════════
+   TYPING STRIP
+══════════════════════════════════════════ */
+.typing-strip {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  padding: 14px 48px;
+  display: flex; align-items: center; gap: 16px;
+  background: linear-gradient(to top, rgba(2,4,8,0.9), transparent);
+  pointer-events: none;
+  opacity: 0; animation: fadeIn 1s ease 2s forwards;
+}
+.strip-label {
+  font-family: var(--f-mono); font-size: 9px; letter-spacing: 2px;
+  color: var(--teal); text-transform: uppercase; white-space: nowrap;
+  padding: 4px 10px; border: 1px solid var(--rimb);
+  border-radius: 4px; background: var(--teal-dim);
+}
+.strip-text {
+  font-family: var(--f-mono); font-size: 12px; color: var(--muted);
+  border-right: 2px solid var(--teal);
+  animation: blink 0.85s step-end infinite; padding-right: 3px;
+}
+@keyframes blink { 0%,100%{border-color:var(--teal)} 50%{border-color:transparent} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* ══════════════════════════════════════════
+   DECO RIGHT
+══════════════════════════════════════════ */
+.deco-right {
+  position: fixed; right: 6vw; top: 50%; transform: translateY(-50%);
+  z-index: 6; pointer-events: none;
+  opacity: 0; animation: fadeIn 1.2s ease 1.4s forwards;
+}
+.deco-dots {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px;
+}
+.deco-dots span {
+  width: 3px; height: 3px; border-radius: 50%; background: var(--teal); opacity: 0.3;
+  animation: dotPop 2s ease-in-out infinite;
+}
+.deco-dots span:nth-child(odd) { animation-delay: 0.3s; background: var(--lime); }
+@keyframes dotPop { 0%,100%{opacity:.2} 50%{opacity:.6} }
+.deco-lines { display: flex; flex-direction: column; gap: 8px; }
+.deco-line {
+  height: 1px; border-radius: 1px;
+  background: linear-gradient(to right, var(--teal), transparent); opacity: 0.25;
+}
+.deco-line:nth-child(1){ width:80px; }
+.deco-line:nth-child(2){ width:55px; }
+.deco-line:nth-child(3){ width:70px; }
+.deco-line:nth-child(4){ width:45px; }
+.deco-line:nth-child(5){ width:65px; }
+
+/* ══════════════════════════════════════════
+   FAB
+══════════════════════════════════════════ */
+.chat-fab {
+  position: fixed; right: 36px; bottom: 48px; z-index: 200;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  animation: fabFloat 3.5s ease-in-out infinite;
+}
+.chat-fab:hover { animation: none; }
+.chat-fab:hover .fab-btn { transform: scale(1.08); box-shadow: 0 0 0 1px rgba(0,212,255,0.2), 0 20px 50px rgba(0,0,0,0.6), 0 0 30px rgba(0,212,255,0.15); }
+@keyframes fabFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+
+.fab-rings {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
+.fab-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(0,212,255,0.35);
+  animation: fabRing 2.6s ease-out infinite;
+}
+.fab-ring:nth-child(1){ width:86px; height:86px; }
+.fab-ring:nth-child(2){ width:108px; height:108px; animation-delay:.55s; }
+@keyframes fabRing {
+  0%{opacity:.55; transform:scale(.9)}
+  100%{opacity:0; transform:scale(1.35)}
+}
+.fab-btn {
+  width: 70px; height: 70px; border-radius: 21px;
+  background: linear-gradient(145deg, rgba(0,80,160,0.92), rgba(0,20,60,0.97));
+  border: 1px solid rgba(0,212,255,0.28);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 1px rgba(0,212,255,0.08), 0 18px 44px rgba(0,0,0,0.55);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  font-size: 30px; position: relative; overflow: hidden;
+}
+.fab-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,212,255,0.1), transparent 55%);
+  border-radius: inherit;
+}
+.fab-label {
+  font-family: var(--f-mono); font-size: 9px;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--teal); opacity: 0.7;
+}
+
+/* ══════════════════════════════════════════
+   CHAT WINDOW
+══════════════════════════════════════════ */
+.chat-win {
+  position: fixed; right: 28px; bottom: 28px; z-index: 199;
+  width: var(--chat-w); height: var(--chat-h);
+  border-radius: 28px;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: rgba(255,255,255,0.98);
+  border: 1px solid rgba(95,116,255,0.14);
+  box-shadow: 0 30px 70px rgba(34,49,85,0.12);
+  transform: scale(0.94) translateY(20px);
+  opacity: 0; pointer-events: none;
+  transition: all 0.35s ease;
+}
+.chat-win::before {
+  content: ''; position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 72px; height: 4px; background: rgba(95,116,255,0.18);
+  border-radius: 999px; z-index: 1;
+}
+.chat-win.open {
+  transform: scale(1) translateY(0);
+  opacity: 1; pointer-events: auto;
+}
+
+/* HEADER */
+.chat-hdr {
+  padding: 18px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(95,116,255,0.14); flex-shrink: 0;
+  background: rgba(255,255,255,0.96);
+  position: relative;
+}
+.chat-hdr::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: rgba(95,116,255,0.12);
+}
+.hdr-av {
+  width: 44px; height: 44px; border-radius: 16px;
+  background: rgba(95,116,255,0.14);
+  border: 1px solid rgba(95,116,255,0.16);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; position: relative;
+}
+.hdr-av-dot {
+  position: absolute; bottom: 0; right: 0;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); border: 2px solid #fff;
+  box-shadow: 0 0 10px rgba(95,116,255,0.25);
+}
+.hdr-info { flex: 1; padding: 0 12px; }
+.hdr-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.hdr-status { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.4px; margin-top: 4px; }
+.hdr-actions { display: flex; gap: 10px; }
+.hdr-btn { width: 36px; height: 36px; border-radius: 14px; background: rgba(255,255,255,0.9); border: 1px solid rgba(95,116,255,0.14); display: grid; place-items: center; color: var(--muted); cursor: pointer; transition: background 0.2s ease; }
+.hdr-btn:hover { background: #f1f4ff; }
+
+/* BODY */
+.chat-body {
+  flex: 1; padding: 20px 18px;
+  overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+  scroll-behavior: smooth;
+}
+.chat-body::-webkit-scrollbar { width: 6px; }
+.chat-body::-webkit-scrollbar-thumb { background: rgba(95,116,255,0.18); border-radius: 999px; }
+
+/* WELCOME */
+.welcome-card {
+  align-self: flex-start;
+  background: rgba(95,116,255,0.08);
+  border: 1px solid rgba(95,116,255,0.14);
+  border-radius: 22px;
+  padding: 18px 20px;
+}
+.wc-head { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.wc-body { font-size: 14px; color: var(--muted); line-height: 1.75; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.chip { padding: 8px 14px; border-radius: 999px; background: rgba(95,116,255,0.12); color: var(--accent); border: 1px solid rgba(95,116,255,0.14); font-size: 12px; cursor: pointer; transition: transform 0.2s ease; }
+.chip:hover { transform: translateY(-1px); background: rgba(95,116,255,0.18); }
+
+/* MESSAGES */
+.msg-wrap { display: flex; flex-direction: column; }
+.msg {
+  max-width: 82%; padding: 11px 15px;
+  font-size: 13.5px; line-height: 1.65;
+  animation: msgIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  word-break: break-word;
+}
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(10px) scale(0.96); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+.msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #1a65e8, #0f4ab8);
+  color: #fff; border-radius: 18px 18px 4px 18px;
+  box-shadow: 0 6px 24px rgba(26,101,232,0.3);
+}
+.msg.bot {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
+  color: var(--text); border-radius: 18px 18px 18px 4px;
+}
+.msg-meta {
+  font-family: var(--f-mono); font-size: 9px; color: var(--faint);
+  letter-spacing: 0.3px; margin-top: 4px; padding: 0 4px;
+}
+.msg-meta.right { text-align: right; align-self: flex-end; }
+.msg-meta.left  { align-self: flex-start; }
+
+/* TYPING DOTS */
+.typing-dots {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.92); border: 1px solid rgba(95,116,255,0.18);
+  border-radius: 22px; padding: 14px 18px; display: flex; gap: 6px; align-items: center;
+  animation: msgIn 0.3s ease;
+}
+.typing-dots span {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  animation: tdot 1.3s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay:.2s; background: rgba(95,116,255,0.8); }
+.typing-dots span:nth-child(3) { animation-delay:.4s; }
+@keyframes tdot {
+  0%,70%,100%{ transform:translateY(0); opacity:.4; }
+  35%{ transform:translateY(-6px); opacity:1; }
+}
+
+/* INPUT */
+.chat-foot {
+  padding: 16px 18px;
+  border-top: 1px solid rgba(95,116,255,0.14);
+  background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); flex-shrink: 0;
+}
+.input-row { display: flex; gap: 10px; align-items: center; }
+.chat-input {
+  flex: 1;
+  background: #fff; border: 1px solid rgba(95,116,255,0.16);
+  border-radius: 18px; color: var(--text); padding: 14px 16px;
+  font-size: 14px; font-family: var(--f-disp); outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  min-height: 48px;
+}
+.chat-input::placeholder { color: var(--faint); }
+.chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 8px rgba(95,116,255,0.08); }
+.ib {
+  width: 50px; height: 50px; border-radius: 16px;
+  border: 1px solid rgba(95,116,255,0.16); background: #fff;
+  color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.ib:hover { background: rgba(95,116,255,0.1); color: var(--accent); }
+.ib svg { width:16px; height:16px; }
+.ib.send { background: linear-gradient(135deg, #5f74ff, #7a97ff); border-color: transparent; color: #fff; }
+.ib.send:hover { background: linear-gradient(135deg, #4c62e2, #657cee); transform: translateY(-2px); }
+.ib.mic-active { background: rgba(95,116,255,0.14) !important; border-color: rgba(95,116,255,0.3) !important; color: var(--accent) !important; }
+.input-hint {
+  font-family: var(--f-mono); font-size: 11px;
+  color: var(--faint); text-align: center; margin-top: 10px; letter-spacing: 0.4px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="bg-photo"></div>
+<div class="bg-chroma"></div>
+<canvas id="particles"></canvas>
+<div class="bg-grid"></div>
+<div class="bg-vignette"></div>
+<div class="scan"></div>
+
+<nav class="navbar">
+  <div class="nav-brand">
+    <div class="brand-mark">🧬</div>
+    <div class="brand-copy">
+      <div class="n">MR AI Assistant</div>
+      <div class="t">Powered by MRIPS</div>
+    </div>
+  </div>
+  <div class="nav-center">
+    <div class="nav-item active">Overview</div>
+    <div class="nav-item">Anatomy</div>
+    <div class="nav-item">Procedures</div>
+    <div class="nav-item">Simulation</div>
+  </div>
+  <div class="status-pill">
+    <div class="pulse-dot"></div>
+    Voice Active
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">Guided Anatomy Simulation</div>
+  <h1 class="hero-h1">Intelligent<br><em>Anatomy</em><br>Assistant</h1>
+  <p class="hero-desc">AI-guided simulations for pharmacy students to visualize, explore, and deeply understand human anatomy — with voice and text support.</p>
+  <div class="hero-kpis">
+    <div class="kpi">
+      <span class="kpi-v">3D</span>
+      <span class="kpi-l">Visualisation</span>
+    </div>
+    <div class="kpi-sep"></div>
+    <div class="kpi">
+      <span class="kpi-v">NLU</span>
+      <span class="kpi-l">AI Powered</span>
+    </div>
+    <div class="kpi-sep"></div>
+    <div class="kpi">
+      <span class="kpi-v">24/7</span>
+      <span class="kpi-l">Assistance</span>
+    </div>
+  </div>
+</section>
+
+<div class="typing-strip">
+  <div class="strip-label">Live · Context</div>
+  <div class="strip-text" id="typingText"></div>
+</div>
+
+<div class="deco-right">
+  <div class="deco-dots" id="decoGrid"></div>
+  <div class="deco-lines">
+    <div class="deco-line"></div>
+    <div class="deco-line"></div>
+    <div class="deco-line"></div>
+    <div class="deco-line"></div>
+    <div class="deco-line"></div>
+  </div>
+</div>
+
+<div class="chat-fab" id="chatFab" onclick="toggleChat()">
+  <div class="fab-rings">
+    <div class="fab-ring"></div>
+    <div class="fab-ring"></div>
+  </div>
+  <div class="fab-btn">🤖</div>
+  <div class="fab-label">Ask AI</div>
+</div>
+
+<div class="chat-win" id="chatWin">
+  <div class="chat-hdr">
+    <div class="hdr-av">
+      🧠
+      <div class="hdr-av-dot"></div>
+    </div>
+    <div class="hdr-info">
+      <div class="hdr-name">MR AI Assistant</div>
+      <div class="hdr-status">● online · anatomy expert</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="hdr-btn close-x" onclick="toggleChat()" title="Close">
+        <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+          <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="chat-body" id="chatBox"></div>
+
+  <div class="chat-foot">
+    <div class="input-row">
+      <input class="chat-input" id="userInput" placeholder="Ask about anatomy…" autocomplete="off"/>
+      <button class="ib" id="micBtn" title="Voice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/>
+        </svg>
+      </button>
+      <button class="ib send" id="sendBtn" title="Send">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-hint">ENTER to send &nbsp;·&nbsp; 🎙 voice &nbsp;·&nbsp; powered by RASA NLU</div>
+  </div>
+</div>
+
+<script>
+/* PARTICLE CANVAS */
+(function(){
+  const cv=document.getElementById('particles');
+  const cx=cv.getContext('2d');
+  let W,H,pts=[];
+  const N=70,LINK=150;
+  const COLS=['#00d4ff','#39ffb0','#3b7bff'];
+  function init(){
+    W=cv.width=innerWidth; H=cv.height=innerHeight;
+    pts=Array.from({length:N},()=>({
+      x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,
+      r:Math.random()*1.8+.5,
+      c:COLS[0|Math.random()*COLS.length],
+      a:Math.random()*.5+.2
+    }));
+  }
+  function frame(){
+    cx.clearRect(0,0,W,H);
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.hypot(dx,dy);
+        if(d<LINK){
+          cx.beginPath();
+          cx.strokeStyle=`rgba(0,212,255,${(1-d/LINK)*.15})`;
+          cx.lineWidth=.7;
+          cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);cx.stroke();
+        }
+      }
+    }
+    pts.forEach(p=>{
+      cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      cx.fillStyle=p.c;cx.globalAlpha=p.a;cx.fill();cx.globalAlpha=1;
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+    });
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener('resize',init);
+  init();frame();
+})();
+
+/* DECO DOTS */
+const dg=document.getElementById('decoGrid');
+for(let i=0;i<25;i++){const s=document.createElement('span');dg.appendChild(s);}
+
+/* REFS */
+const chatWin=document.getElementById('chatWin');
+const chatFab=document.getElementById('chatFab');
+const chatBox=document.getElementById('chatBox');
+const inputEl=document.getElementById('userInput');
+const sendBtn=document.getElementById('sendBtn');
+const micBtn=document.getElementById('micBtn');
+
+/* WELCOME */
+function injectWelcome(){
+  const card=document.createElement('div');
+  card.className='welcome-card';
+  card.innerHTML=`
+    <div class="wc-head">👋 Welcome</div>
+    <div class="wc-body">I'm your Anatomy AI guide. Ask about human anatomy, drug interactions, procedures, or guided simulations.</div>
+    <div class="chips">
+      <div class="chip" onclick="quickAsk('Explain the cardiovascular system')">Cardiovascular</div>
+      <div class="chip" onclick="quickAsk('Show nervous system overview')">Nervous System</div>
+      <div class="chip" onclick="quickAsk('Digestive system walkthrough')">Digestive</div>
+      <div class="chip" onclick="quickAsk('Respiratory system guide')">Respiratory</div>
+    </div>`;
+  chatBox.appendChild(card);
+}
+injectWelcome();
+
+/* TOGGLE */
+function toggleChat(){
+  const open=chatWin.classList.toggle('open');
+  chatFab.style.display=open?'none':'flex';
+  if(open) setTimeout(()=>inputEl.focus(),380);
+}
+
+/* QUICK ASK */
+function quickAsk(t){inputEl.value=t;sendMessage();}
+
+/* SEND */
+sendBtn.onclick=sendMessage;
+inputEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendMessage();}});
+
+function sendMessage(){
+  const msg=inputEl.value.trim();
+  if(!msg)return;
+  addMessage(msg,'user');
+  inputEl.value='';
+  const td=addTyping();
+  fetch('http://localhost:5005/webhooks/rest/webhook',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sender:'user',message:msg})
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    td.remove();
+    if(!data||!data.length){addMessage("I didn't catch that — could you rephrase?",'bot');return;}
+    data.forEach(d=>{if(d.text)addMessage(d.text,'bot');});
+  })
+  .catch(()=>{
+    td.remove();
+    addMessage('Server not responding. Please check your connection.','bot');
+  });
+}
+
+/* ADD MESSAGE */
+function addMessage(text,type){
+  const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const wrap=document.createElement('div');
+  wrap.className='msg-wrap';
+  const div=document.createElement('div');
+  div.className=`msg ${type}`;
+  div.textContent=text;
+  const meta=document.createElement('div');
+  meta.className=`msg-meta ${type==='user'?'right':'left'}`;
+  meta.textContent=now;
+  wrap.appendChild(div);
+  wrap.appendChild(meta);
+  chatBox.appendChild(wrap);
+  chatBox.scrollTo({top:chatBox.scrollHeight,behavior:'smooth'});
+}
+
+/* TYPING INDICATOR */
+function addTyping(){
+  const d=document.createElement('div');
+  d.className='typing-dots';
+  d.innerHTML='<span></span><span></span><span></span>';
+  chatBox.appendChild(d);
+  chatBox.scrollTo({top:chatBox.scrollHeight,behavior:'smooth'});
+  return d;
+}
+
+/* VOICE */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  const rec=new SR();rec.lang='en-US';let on=false;
+  micBtn.onclick=()=>{if(on){rec.stop();return;}rec.start();on=true;micBtn.classList.add('mic-active');};
+  rec.onresult=e=>{inputEl.value=e.results[0][0].transcript;sendMessage();};
+  rec.onend=()=>{on=false;micBtn.classList.remove('mic-active');};
+}else{micBtn.style.opacity='.3';micBtn.style.cursor='not-allowed';micBtn.onclick=()=>{};}
+
+/* TYPING INTRO */
+const lines=[
+  'Visualizing human anatomy in real time.',
+  'Guiding pharmacy students through complex procedures.',
+  'Ask via voice or text — anytime, anywhere.',
+  'Powered by intelligent simulation & RASA NLU.'
+];
+let li=0,ci=0;
+const te=document.getElementById('typingText');
+function typeNext(){
+  if(li>=lines.length){li=0;te.textContent='';}
+  if(ci<lines[li].length){te.textContent+=lines[li][ci++];setTimeout(typeNext,40);}
+  else{setTimeout(()=>{te.textContent+=' ';li++;ci=0;typeNext();},1400);}
+}
+setTimeout(typeNext,2000);
+</script>
+</body>
+</html>
